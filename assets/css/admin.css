@@ -1,0 +1,231 @@
+/**
+ * Стили для административного интерфейса
+ *
+ * @package WooCommerce GetCourse Integration
+ */
+
+.woogc-admin-container {
+    margin-top: 20px;
+}
+
+.woogc-admin-header {
+    margin-bottom: 20px;
+}
+
+/* Стили для вкладок */
+.woogc-admin-tabs {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+}
+
+.woogc-tabs-nav {
+    display: flex;
+    border-bottom: 1px solid #ccd0d4;
+    margin: 0;
+    padding: 0;
+}
+
+.woogc-tabs-nav li {
+    margin: 0;
+    list-style: none;
+}
+
+.woogc-tabs-nav li a {
+    display: block;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #555;
+    font-weight: 500;
+    border-right: 1px solid #ccd0d4;
+    background: #f6f7f7;
+    transition: background 0.2s ease;
+}
+
+.woogc-tabs-nav li a:hover {
+    background: #f0f0f1;
+    color: #0073aa;
+}
+
+.woogc-tabs-nav li.active a {
+    background: #fff;
+    color: #0073aa;
+    border-bottom: 1px solid #fff;
+    margin-bottom: -1px;
+}
+
+.woogc-tab-content {
+    display: none;
+    padding: 20px;
+}
+
+.woogc-tab-content.active {
+    display: block;
+}
+
+/* Стили для информации об endpoint */
+.woogc-endpoint-info {
+    background: #f6f7f7;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.woogc-endpoint-url {
+    display: inline-block;
+    padding: 8px 12px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-right: 10px;
+    font-size: 14px;
+    color: #444;
+    width: 60%;
+}
+
+/* Стили для заголовка аккаунта */
+.woogc-account-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+/* Стили для таблицы сопоставлений */
+.woogc-mapping-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.woogc-mapping-table th {
+    background: #f6f7f7;
+    text-align: left;
+    padding: 10px;
+}
+
+.woogc-mapping-table td {
+    padding: 10px;
+    vertical-align: middle;
+}
+
+.woogc-mapping-table input[type="text"] {
+    width: 100%;
+}
+
+.woogc-mapping-table select {
+    width: 100%;
+}
+
+.woogc-empty-row td {
+    text-align: center;
+    padding: 15px;
+    color: #999;
+}
+
+/* Стили для кнопок действий */
+.woogc-save-mapping, 
+.woogc-delete-mapping {
+    margin-right: 5px !important;
+}
+
+.woogc-delete-mapping {
+    color: #a00 !important;
+}
+
+.woogc-delete-mapping:hover {
+    color: #dc3232 !important;
+}
+
+/* Стили для уведомлений */
+.woogc-notice {
+    padding: 10px 15px;
+    margin: 15px 0;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.woogc-notice-success {
+    background: #f0f8e6;
+    border-color: #7ad03a;
+}
+
+.woogc-notice-error {
+    background: #fef1f1;
+    border-color: #dc3232;
+}
+
+/* Стили для страницы логов */
+.woogc-logs-container {
+    display: flex;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.woogc-logs-sidebar {
+    width: 25%;
+    border-right: 1px solid #ccd0d4;
+    padding: 15px;
+}
+
+.woogc-logs-content {
+    width: 75%;
+    padding: 15px;
+}
+
+.woogc-log-files {
+    margin: 0;
+    padding: 0;
+}
+
+.woogc-log-files li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.woogc-log-files li a {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+    text-decoration: none;
+    color: #444;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.woogc-log-files li a:hover {
+    background: #f6f7f7;
+}
+
+.woogc-log-files li.active a {
+    background: #0073aa;
+    color: #fff;
+}
+
+.woogc-log-account {
+    font-weight: 500;
+}
+
+.woogc-log-viewer {
+    background: #f6f7f7;
+    padding: 15px;
+    border-radius: 4px;
+    overflow: auto;
+    max-height: 600px;
+}
+
+.woogc-log-viewer pre {
+    white-space: pre-wrap;
+    margin: 0;
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.woogc-log-placeholder {
+    padding: 50px 0;
+    text-align: center;
+    color: #999;
+}
