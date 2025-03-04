@@ -1,8 +1,9 @@
 <?php
 /**
  * Plugin Name: WooCommerce GetCourse Integration
+ * Plugin URI: https://github.com/sup3dev/woogc-mapping.git
  * Description: Улучшенная интеграция WooCommerce с платформой GetCourse
- * Version: 2.0
+ * Version: 2.2
  * Author: Alexander Mikheev
  * Author URI: https://t.me/ialexdev
  * Text Domain: woo-getcourse
@@ -71,12 +72,24 @@ function woogc_activate() {
         wp_mkdir_p(WOOGC_LOG_DIR);
     }
     
-    // Миграция существующих сопоставлений
+    // Миграция существующих сопоставлений из старого плагина
     $old_mapping = get_option('getcourse_woocommerce_mapping', array());
+    
     if (!empty($old_mapping) && empty(get_option('woogc_account1_mapping'))) {
-        update_option('woogc_account1_mapping', $old_mapping);
+        // Конвертируем старый формат в новый с поддержкой ролей
+        $new_mapping = array();
+        foreach ($old_mapping as $gc_id => $woo_id) {
+            $new_mapping[$gc_id] = array(
+                'product_id' => $woo_id,
+                'role' => ''
+            );
+        }
+        
+        // Сохраняем в новый формат
+        update_option('woogc_account1_mapping', $new_mapping);
     }
     
+    // Создаем опцию для второго аккаунта, если не существует
     if (!get_option('woogc_account2_mapping')) {
         update_option('woogc_account2_mapping', array());
     }
@@ -87,6 +100,14 @@ function woogc_activate() {
             '1' => 'Аккаунт GetCourse 1',
             '2' => 'Аккаунт GetCourse 2'
         ));
+    }
+    
+    // Копируем настройки задержки из старого плагина для обратной совместимости
+    if (null !== get_option('woogc_add_delay', null)) {
+        // Уже существует, не перезаписываем
+    } else {
+        update_option('woogc_add_delay', '1'); // Включаем по умолчанию для совместимости со старым плагином
+        update_option('woogc_delay_seconds', '30'); // 30 секунд, как в оригинальном плагине
     }
     
     // Очищаем кэш перезаписи маршрутов для применения новых API конечных точек
@@ -101,9 +122,16 @@ function woogc_deactivate() {
 
 // Функция удаления плагина
 function woogc_uninstall() {
-    // Удаляем опции плагина
+    // Удаляем опции плагина при удалении (но не старого плагина для безопасности)
     delete_option('woogc_account1_mapping');
     delete_option('woogc_account2_mapping');
     delete_option('woogc_account_names');
-    delete_option('woogc_settings');
+    delete_option('woogc_log_enabled');
+    delete_option('woogc_email_notification');
+    delete_option('woogc_default_role');
+    delete_option('woogc_add_delay');
+    delete_option('woogc_delay_seconds');
+    
+    // Не удаляем старое сопоставление для безопасности
+    // delete_option('getcourse_woocommerce_mapping');
 }

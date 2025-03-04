@@ -28,17 +28,16 @@ class WOOGC_API {
             'permission_callback' => '__return_true'
         ]);
         
-        // Поддержка обратной совместимости - старый эндпоинт
+        // Поддержка обратной совместимости - старые эндпоинты
         register_rest_route('getcourse/v1', '/buy', [
             'methods' => 'GET',
-            'callback' => array(__CLASS__, 'handle_account1_callback'), // Тот же обработчик, что и для account1
+            'callback' => array(__CLASS__, 'handle_account1_callback'), // Перенаправляем на тот же обработчик
             'permission_callback' => '__return_true'
         ]);
         
-        // Дополнительный эндпоинт для второго аккаунта с сохранением старого паттерна именования
         register_rest_route('getcourse/v1', '/buy2', [
             'methods' => 'GET',
-            'callback' => array(__CLASS__, 'handle_account2_callback'),
+            'callback' => array(__CLASS__, 'handle_account2_callback'), // Перенаправляем на тот же обработчик
             'permission_callback' => '__return_true'
         ]);
     }
@@ -87,32 +86,61 @@ class WOOGC_API {
                 return new WP_Error('missing_parameters', 'Отсутствуют обязательные параметры', array('status' => 400));
             }
             
-            // Получаем информацию о сопоставлении
+            // Получаем сопоставление тарифов для текущего аккаунта
             $mapping_option = 'woogc_account' . $account_id . '_mapping';
             $mapping = get_option($mapping_option, array());
-
-            // Проверяем, есть ли для этого тарифа установка роли
-            if (isset($mapping[$tariff_id]) && is_array($mapping[$tariff_id]) && !empty($mapping[$tariff_id]['role'])) {
-                $new_role = $mapping[$tariff_id]['role'];
-                
-                // Устанавливаем новую роль пользователю
-                $user_obj = new WP_User($user->ID);
-                $user_obj->set_role($new_role);
-                
-                WOOGC_Logger::log("Установлена роль {$new_role} для пользователя {$user->ID}", $account_id);
+            
+            // Проверяем, возможно, это старый формат данных из оригинального плагина
+            if ($account_id === '1' && empty($mapping) && $request->get_route() === '/wp-json/getcourse/v1/buy') {
+                $legacy_mapping = get_option('getcourse_woocommerce_mapping', array());
+                if (!empty($legacy_mapping)) {
+                    // Если старое сопоставление существует, используем его и одновременно мигрируем
+                    $mapping = $legacy_mapping;
+                    
+                    // Конвертируем в новый формат с поддержкой ролей
+                    $new_mapping = array();
+                    foreach ($mapping as $gc_id => $woo_id) {
+                        $new_mapping[$gc_id] = array(
+                            'product_id' => $woo_id,
+                            'role' => ''
+                        );
+                    }
+                    
+                    // Сохраняем в новый формат
+                    update_option($mapping_option, $new_mapping);
+                    
+                    WOOGC_Logger::log('Выполнена миграция сопоставлений из устаревшего формата', $account_id);
+                }
             }
             
-            // Получаем ID товара WooCommerce
-            $woocommerce_product_id = $mapping[$tariff_id];
-            WOOGC_Logger::log("Найден товар WooCommerce с ID {$woocommerce_product_id} для тарифа {$tariff_id}", $account_id);
+            // Проверяем наличие тарифа в сопоставлении
+            if (!isset($mapping[$tariff_id])) {
+                WOOGC_Logger::log("Тариф с ID {$tariff_id} не найден в сопоставлении", $account_id, 'error');
+                return new WP_Error('invalid_tariff_id', 'Тариф не найден в сопоставлении', array('status' => 400));
+            }
+            
+            // Получаем ID товара WooCommerce и роль из сопоставления
+            $product_id = null;
+            $role = '';
+            
+            if (is_array($mapping[$tariff_id])) {
+                // Новый формат сопоставления с поддержкой ролей
+                $product_id = $mapping[$tariff_id]['product_id'];
+                $role = isset($mapping[$tariff_id]['role']) ? $mapping[$tariff_id]['role'] : '';
+            } else {
+                // Старый формат сопоставления (для обратной совместимости)
+                $product_id = $mapping[$tariff_id];
+            }
+            
+            WOOGC_Logger::log("Найден товар WooCommerce с ID {$product_id} для тарифа {$tariff_id}", $account_id);
             
             // Обрабатываем пользователя и заказ
-            return WOOGC_Core::process_order($name, $email, $woocommerce_product_id, $status, $account_id);
+            return WOOGC_Core::process_order($name, $email, $product_id, $status, $account_id, $role);
             
         } catch (Exception $e) {
             // Логируем ошибку
             WOOGC_Logger::log_error($e, $account_id);
-            return new WP_Error('internal_error', 'Внутренняя ошибка сервера', array('status' => 500));
+            return new WP_Error('internal_error', 'Внутренняя ошибка сервера: ' . $e->getMessage(), array('status' => 500));
         }
     }
 }

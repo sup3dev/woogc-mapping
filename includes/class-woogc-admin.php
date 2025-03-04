@@ -159,7 +159,9 @@ class WOOGC_Admin {
         // Получаем данные из запроса
         $account_id = isset($_POST['account_id']) ? sanitize_text_field($_POST['account_id']) : '';
         $getcourse_id = isset($_POST['getcourse_id']) ? sanitize_text_field($_POST['getcourse_id']) : '';
+        $old_getcourse_id = isset($_POST['old_getcourse_id']) ? sanitize_text_field($_POST['old_getcourse_id']) : '';
         $woocommerce_id = isset($_POST['woocommerce_id']) ? absint($_POST['woocommerce_id']) : 0;
+        $user_role = isset($_POST['user_role']) ? sanitize_text_field($_POST['user_role']) : '';
         
         // Проверяем обязательные данные
         if (empty($account_id) || empty($getcourse_id) || empty($woocommerce_id)) {
@@ -170,11 +172,26 @@ class WOOGC_Admin {
         $option_name = 'woogc_account' . $account_id . '_mapping';
         $mapping = get_option($option_name, array());
         
-        // Обновляем сопоставление
-        $mapping[$getcourse_id] = [
-            'product_id' => $woocommerce_product_id,
-            'role' => $role // может быть пустым, если роль не меняется
-        ];
+        // Проверяем, изменился ли ID тарифа
+        if (!empty($old_getcourse_id) && $old_getcourse_id !== $getcourse_id) {
+            // Удаляем старое сопоставление
+            if (isset($mapping[$old_getcourse_id])) {
+                unset($mapping[$old_getcourse_id]);
+            }
+        }
+        
+        // Проверяем, существует ли такое сопоставление
+        if (isset($mapping[$getcourse_id]) && is_array($mapping[$getcourse_id])) {
+            // Обновляем существующее сопоставление
+            $mapping[$getcourse_id]['product_id'] = $woocommerce_id;
+            $mapping[$getcourse_id]['role'] = $user_role;
+        } else {
+            // Создаем новое сопоставление с поддержкой роли
+            $mapping[$getcourse_id] = array(
+                'product_id' => $woocommerce_id,
+                'role' => $user_role
+            );
+        }
         
         // Сохраняем сопоставление
         update_option($option_name, $mapping);

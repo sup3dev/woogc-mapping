@@ -27,7 +27,8 @@ class WOOGC_Logger {
         
         // Форматируем данные для записи
         if (is_array($data) || is_object($data)) {
-            $log_data = print_r($data, true);
+            // Используем компактный JSON вместо print_r
+            $log_data = json_encode($data, JSON_UNESCAPED_UNICODE);
         } else {
             $log_data = (string) $data;
         }
@@ -52,6 +53,7 @@ class WOOGC_Logger {
         if ($error instanceof Exception) {
             $error_data['error_type'] = get_class($error);
             $error_data['error_message'] = $error->getMessage();
+            // Для компактности опционально можно закомментировать строку ниже
             $error_data['error_trace'] = $error->getTraceAsString();
         } elseif ($error instanceof WP_Error) {
             $error_data['error_type'] = 'WP_Error';
@@ -75,11 +77,13 @@ class WOOGC_Logger {
     public static function log_request(WP_REST_Request $request, $account_id = '1') {
         $request_data = array(
             'method' => $request->get_method(),
-            'headers' => $request->get_headers(),
-            'params' => $request->get_params(),
             'url' => $request->get_route(),
-            'ip' => $_SERVER['REMOTE_ADDR'],
-            'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'Unknown'
+            'params' => $request->get_params()
+            // Остальные поля закомментированы для компактности,
+            // но можно раскомментировать при необходимости
+            //'headers' => $request->get_headers(),
+            //'ip' => $_SERVER['REMOTE_ADDR'],
+            //'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'Unknown'
         );
         
         self::log($request_data, $account_id, 'request');
@@ -98,6 +102,10 @@ class WOOGC_Logger {
             'customer_id' => $order->get_customer_id(),
             'total' => $order->get_total(),
             'status' => $order->get_status(),
+            'items_count' => count($order->get_items())
+            // Детальная информация о товарах заменена на количество товаров
+            // Раскомментируйте код ниже, если нужна детальная информация
+            /*
             'items' => array()
         );
         
@@ -107,7 +115,8 @@ class WOOGC_Logger {
                 'name' => $item->get_name(),
                 'quantity' => $item->get_quantity()
             );
-        }
+            */
+        );
         
         self::log($order_data, $account_id, 'order_created');
     }

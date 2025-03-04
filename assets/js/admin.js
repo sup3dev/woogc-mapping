@@ -140,6 +140,8 @@
             const $row = $button.closest('tr');
             const getcourseId = $row.find('.woogc-getcourse-id').val();
             const woocommerceId = $row.find('.woogc-woo-product-id').val();
+            const userRole = $row.find('.woogc-user-role').val();
+            const oldGetcourseId = $row.data('getcourse-id');
             
             // Проверяем, что ID тарифа GetCourse не пустой
             if (!getcourseId) {
@@ -156,17 +158,16 @@
                     nonce: woogc_admin.nonce,
                     account_id: accountId,
                     getcourse_id: getcourseId,
-                    woocommerce_id: woocommerceId
+                    old_getcourse_id: oldGetcourseId, // Для случая, если ID тарифа был изменен
+                    woocommerce_id: woocommerceId,
+                    user_role: userRole
                 },
                 success: function(response) {
                     if (response.success) {
                         WooGCAdmin.showNotice('Сопоставление успешно сохранено', 'success');
                         
-                        // Если это новая строка, делаем поле ID тарифа readonly
-                        if (!$row.data('getcourse-id')) {
-                            $row.attr('data-getcourse-id', getcourseId);
-                            $row.find('.woogc-getcourse-id').attr('readonly', 'readonly');
-                        }
+                        // Обновляем атрибут data-getcourse-id
+                        $row.attr('data-getcourse-id', getcourseId);
                     } else {
                         WooGCAdmin.showNotice(response.data, 'error');
                     }
@@ -215,7 +216,7 @@
                             // Если это была последняя строка, добавляем сообщение о пустой таблице
                             const $tbody = $('#account' + accountId).find('.woogc-mapping-table tbody');
                             if ($tbody.find('tr').length === 0) {
-                                $tbody.html('<tr class="woogc-empty-row"><td colspan="3">Сопоставления не настроены. Добавьте первое сопоставление.</td></tr>');
+                                $tbody.html('<tr class="woogc-empty-row"><td colspan="4">Сопоставления не настроены. Добавьте первое сопоставление.</td></tr>');
                             }
                         });
                         
@@ -351,3 +352,19 @@
     });
     
 })(jQuery);
+
+jQuery(document).ready(function($) {
+    // Обработчик для "Выбрать все"
+    $('#select-all-logs').change(function() {
+        $('.log-file-checkbox').prop('checked', $(this).prop('checked'));
+    });
+    
+    // Обновление состояния "Выбрать все" при изменении отдельных чекбоксов
+    $('.log-file-checkbox').change(function() {
+        if ($('.log-file-checkbox:checked').length === $('.log-file-checkbox').length) {
+            $('#select-all-logs').prop('checked', true);
+        } else {
+            $('#select-all-logs').prop('checked', false);
+        }
+    });
+});
