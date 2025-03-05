@@ -79,11 +79,37 @@ class WOOGC_API {
             $email = $request->get_param('email');
             $tariff_id = $request->get_param('offers');
             $status = $request->get_param('status');
+            $getcourse_order_id = $request->get_param('getcourse_order_id');
             
             // Проверяем обязательные параметры
             if (!$name || !$email || !$tariff_id) {
                 WOOGC_Logger::log('Отсутствуют обязательные параметры: name, email или offers', $account_id, 'error');
                 return new WP_Error('missing_parameters', 'Отсутствуют обязательные параметры', array('status' => 400));
+            }
+            
+            // Проверка на дублирование заказа GetCourse
+            if (!empty($getcourse_order_id)) {
+                global $wpdb;
+                
+                // Проверяем наличие заказов с таким же getcourse_order_id в метаданных
+                $existing_order_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT post_id FROM {$wpdb->postmeta} 
+                    WHERE meta_key = '_woogc_getcourse_order_id' 
+                    AND meta_value = %s 
+                    LIMIT 1",
+                    $getcourse_order_id
+                ));
+                
+                if ($existing_order_id) {
+                    WOOGC_Logger::log("Заказ с GetCourse ID {$getcourse_order_id} уже существует (WooCommerce Order #{$existing_order_id}). Прерываем обработку.", $account_id, 'info');
+                    
+                    // Возвращаем информацию о существующем заказе
+                    return new WP_REST_Response(array(
+                        'status' => 'success',
+                        'message' => 'Заказ уже существует',
+                        'order_id' => $existing_order_id
+                    ), 200);
+                }
             }
             
             // Получаем сопоставление тарифов для текущего аккаунта
@@ -94,12 +120,9 @@ class WOOGC_API {
             if ($account_id === '1' && empty($mapping) && $request->get_route() === '/wp-json/getcourse/v1/buy') {
                 $legacy_mapping = get_option('getcourse_woocommerce_mapping', array());
                 if (!empty($legacy_mapping)) {
-                    // Если старое сопоставление существует, используем его и одновременно мигрируем
-                    $mapping = $legacy_mapping;
-                    
                     // Конвертируем в новый формат с поддержкой ролей
                     $new_mapping = array();
-                    foreach ($mapping as $gc_id => $woo_id) {
+                    foreach ($legacy_mapping as $gc_id => $woo_id) {
                         $new_mapping[$gc_id] = array(
                             'product_id' => $woo_id,
                             'role' => ''
@@ -108,6 +131,7 @@ class WOOGC_API {
                     
                     // Сохраняем в новый формат
                     update_option($mapping_option, $new_mapping);
+                    $mapping = $new_mapping;
                     
                     WOOGC_Logger::log('Выполнена миграция сопоставлений из устаревшего формата', $account_id);
                 }
@@ -134,8 +158,8 @@ class WOOGC_API {
             
             WOOGC_Logger::log("Найден товар WooCommerce с ID {$product_id} для тарифа {$tariff_id}", $account_id);
             
-            // Обрабатываем пользователя и заказ
-            return WOOGC_Core::process_order($name, $email, $product_id, $status, $account_id, $role);
+            // Обрабатываем пользователя и заказ, передавая getcourse_order_id
+            return WOOGC_Core::process_order($name, $email, $product_id, $status, $account_id, $role, $getcourse_order_id);
             
         } catch (Exception $e) {
             // Логируем ошибку

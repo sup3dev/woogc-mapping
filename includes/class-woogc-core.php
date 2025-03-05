@@ -37,12 +37,14 @@ class WOOGC_Core {
      * @param string $status Статус заказа от GetCourse
      * @param string $account_id ID аккаунта (1 или 2)
      * @param string $role Роль пользователя после покупки (опционально)
+     * @param string $getcourse_order_id ID заказа в GetCourse (опционально)
      * @return WP_REST_Response|WP_Error Ответ или ошибка
      */
-    public static function process_order($name, $email, $product_id, $status, $account_id, $role = '') {
+    public static function process_order($name, $email, $product_id, $status, $account_id, $role = '', $getcourse_order_id = '') {
         try {
             // Проверяем существование пользователя по email
             $user = get_user_by('email', $email);
+            $newly_created_user = false;
             
             // Если пользователь не существует, создаем его
             if (!$user) {
@@ -88,9 +90,10 @@ class WOOGC_Core {
                 
                 // Получаем объект созданного пользователя
                 $user = get_user_by('ID', $user_id);
+                $newly_created_user = true;
                 
                 // Отправляем уведомление пользователю, если включено
-                if (get_option('woogc_email_notification', '0') === '1') {
+                if ($newly_created_user && get_option('woogc_email_notification', '0') === '1') {
                     wp_new_user_notification($user_id, null, 'user');
                 }
             }
@@ -138,6 +141,12 @@ class WOOGC_Core {
             // Сохраняем информацию о заказе в метаданных
             $order->update_meta_data('_woogc_account_id', $account_id);
             $order->update_meta_data('_woogc_tariff_id', $product_id);
+            
+            // Сохраняем ID заказа GetCourse для предотвращения дублирования
+            if (!empty($getcourse_order_id)) {
+                $order->update_meta_data('_woogc_getcourse_order_id', $getcourse_order_id);
+            }
+            
             $order->save();
             
             // Логируем информацию о созданном заказе
